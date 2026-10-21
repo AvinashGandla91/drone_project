@@ -1,9 +1,8 @@
-"""Live webcam prediction and simulation-only safety decisions."""
+"""Live webcam prediction and conservative simulation-only safety decisions."""
 import argparse
 from pathlib import Path
 import numpy as np
 from .model import load_model, predict
-from .stability import calculate_stability
 from .safety import SafetyGate
 from .labels import UNKNOWN
 
@@ -22,9 +21,9 @@ def main():
     from .landmarks import normalize_landmarks
     payload = load_model(args.model)
     cap = cv2.VideoCapture(args.camera)
-    if not cap.isOpened(): raise SystemExit(f"Cannot open camera index {args.camera}")
+    if not cap.isOpened():
+        raise SystemExit(f"Cannot open camera index {args.camera}")
     gate = SafetyGate()
-    history = []
     try:
         with mp.solutions.hands.Hands(max_num_hands=1, min_detection_confidence=.6, min_tracking_confidence=.6) as hands:
             while True:
@@ -39,23 +38,27 @@ def main():
                     hand = result.multi_hand_landmarks[0]
                     mp.solutions.drawing_utils.draw_landmarks(frame, hand, mp.solutions.hands.HAND_CONNECTIONS)
                     points = np.array([[p.x, p.y, p.z] for p in hand.landmark], dtype=float)
-                    try: label, confidence = predict(payload, normalize_landmarks(points))
-                    except ValueError: label, confidence = UNKNOWN, 0.0
-                history.append(label); history = history[-15:]
-                consistency = sum(x == label for x in history) / len(history)
-                # IMPORTANT: these are placeholders, not measured motion features.
-                stability = calculate_stability(smoothness=.5, gesture_consistency=consistency,
-                                                 velocity_fluctuation=0.0, tremor_proxy=0.0)
-                decision = gate.process(label, confidence, stability.score, stability.status)
+                    try:
+                        label, confidence = predict(payload, normalize_landmarks(points))
+                    except ValueError:
+                        label, confidence = UNKNOWN, 0.0
+                # Temporal stability features are not yet implemented as a validated
+                # window. Do not fabricate a score: directional and LAND requests
+                # remain held; STOP/HOLD can still override immediately.
+                decision = gate.process(label, confidence, None, "UNAVAILABLE")
                 lines = [f"POSE: {label} | confidence: {confidence:.2f}",
-                         f"STABILITY (PLACEHOLDER): {stability.score:.3f} {stability.status}",
+                         "STABILITY: UNAVAILABLE (not measured)",
                          f"DECISION: {decision.decision}",
                          f"SIMULATION COMMAND: {decision.accepted_command or 'NONE'}"]
                 for i, line in enumerate(lines):
                     cv2.putText(frame, line, (10, 28+i*30), cv2.FONT_HERSHEY_SIMPLEX, .58, (255,255,255), 2)
                 cv2.imshow("Drone gesture safety prototype - simulation only", frame)
-                if cv2.waitKey(1) & 0xff == ord("q"): break
+                if cv2.waitKey(1) & 0xff == ord("q"):
+                    break
     finally:
-        gate.reset(); cap.release(); cv2.destroyAllWindows()
+        gate.reset()
+        cap.release()
+        cv2.destroyAllWindows()
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()
