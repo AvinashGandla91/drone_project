@@ -69,7 +69,11 @@ class StabilityWindow:
         # Smoothness proxy: lower second-difference energy maps to higher Q.
         accel = np.diff(velocities, axis=0)
         accel_energy = float(np.mean(np.linalg.norm(accel, axis=1)))
-        smoothness = 1.0 / (1.0 + min(accel_energy, 100.0))
+        # Normalize acceleration by a characteristic speed-per-time scale so Q
+        # is less sensitive to the camera's frame rate and hand scale.
+        characteristic_accel = (float(np.median(speed)) + 1e-6) / (float(np.median(dts)) + 1e-6)
+        normalized_accel = accel_energy / (characteristic_accel + 1e-6)
+        smoothness = 1.0 / (1.0 + min(normalized_accel, 100.0))
 
         # Tremor proxy: high-frequency residual around a local 3-frame moving average.
         if len(points) >= 5:
