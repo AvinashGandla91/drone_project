@@ -36,22 +36,27 @@ class StabilityWindow:
     def reset(self) -> None:
         self._samples.clear()
 
-    def update(self, features, label: str, timestamp: float) -> WindowMetrics | None:
+    def update(self, features, label: str, timestamp: float, position=None) -> WindowMetrics | None:
         vector = np.asarray(features, dtype=np.float64)
         stamp = float(timestamp)
-        if vector.shape != (63,) or not np.isfinite(vector).all() or not math.isfinite(stamp):
+        # Use the wrist's image-space location to retain whole-hand translation,
+        # which the pose-normalized classifier features intentionally remove.
+        anchor = np.asarray(position if position is not None else vector[:3], dtype=np.float64)
+        if (vector.shape != (63,) or not np.isfinite(vector).all()
+                or anchor.shape != (3,) or not np.isfinite(anchor).all()
+                or not math.isfinite(stamp)):
             self.reset()
             return None
         if self._samples:
             dt = stamp - self._samples[-1][0]
             if dt <= self.min_dt or dt > self.max_dt:
                 self.reset()
-        self._samples.append((stamp, vector.copy(), str(label)))
+        self._samples.append((stamp, vector.copy(), str(label), anchor.copy()))
         if len(self._samples) < self.window_size:
             return None
 
         times = np.asarray([s[0] for s in self._samples], dtype=np.float64)
-        points = np.stack([s[1] for s in self._samples])
+        points = np.stack([s[3] for s in self._samples])
         labels = [s[2] for s in self._samples]
         dts = np.diff(times)
         if not np.isfinite(dts).all() or (dts <= self.min_dt).any() or (dts > self.max_dt).any():
