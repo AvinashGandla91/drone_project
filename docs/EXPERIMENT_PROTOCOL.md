@@ -21,7 +21,7 @@ Measure capture-to-prediction and capture-to-decision with a monotonic clock, af
 - Gesture consistency G: fraction of labels in the window equal to the current frame's label, range [0,1].
 - Velocity fluctuation V: standard deviation of per-frame mean landmark speed divided by median speed plus a small epsilon; capped at 100.
 - Motion entropy: Shannon entropy of label frequencies in nats; diagnostic only and deliberately not added to the historical score.
-The live demo now computes these proxies from a 15-frame window. It waits for a complete valid window before showing a score; missing hands or discontinuous timestamps clear the window. These are engineering proxies, not physiological measurements, and need empirical validation. Their scales and thresholds are provisional.
+The live demo now computes these proxies from a 15-frame window. Whole-hand trajectory uses the wrist landmark in image coordinates because pose-normalized classifier features remove whole-hand translation. It waits for a complete valid window before showing a score; missing hands or discontinuous timestamps clear the window. These are engineering proxies, not physiological measurements, and need empirical validation. Their scales and thresholds are provisional.
 
 ## Formula and thresholds
 Historical formula as recorded: S=0.35Q+0.30G+0.20/(1+V)+0.15/(1+10T). Q/G in [0,1], V/T non-negative. Historical status thresholds are 0.60 and 0.72. The original source could not be cross-checked because the repository was empty at initialization. This score is not a calibrated flight-safety probability.
