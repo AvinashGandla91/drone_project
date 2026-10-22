@@ -16,12 +16,12 @@ Record for each class: attempts, correct, incorrect, UNKNOWN, confidence values,
 Measure capture-to-prediction and capture-to-decision with a monotonic clock, after warm-up; report sample count, median and 95th percentile. Record machine, OS, Python, camera, and dependency versions.
 
 ## Stability features
-- Tremor intensity: high-frequency displacement proxy over a fixed temporal window; units depend on normalized landmark scale and sample rate.
-- Trajectory smoothness: normalized path smoothness derived from successive positions; define exact formula before experiments.
-- Gesture consistency: fraction of recent valid frames agreeing with current pose, range [0,1].
-- Velocity fluctuation: non-negative dispersion of successive normalized landmark velocities; units depend on frame timing.
-- Motion entropy: Shannon entropy over a declared movement-state distribution, in nats; currently diagnostic only.
-Do not claim these proxies directly measure physiological states. The current webcam demo still uses placeholder smoothness and velocity values; its displayed score is not a measured stability estimate and must not be reported as a result.
+- Tremor proxy: mean high-frequency landmark residual from a 3-frame moving average over the current normalized-landmark window.
+- Trajectory smoothness proxy Q: inverse transform of mean second-difference energy of per-frame landmark velocities, `Q = 1 / (1 + min(mean_acceleration_norm, 100))`.
+- Gesture consistency G: fraction of labels in the window equal to the current frame's label, range [0,1].
+- Velocity fluctuation V: standard deviation of per-frame mean landmark speed divided by median speed plus a small epsilon; capped at 100.
+- Motion entropy: Shannon entropy of label frequencies in nats; diagnostic only and deliberately not added to the historical score.
+The live demo now computes these proxies from a 15-frame window. It waits for a complete valid window before showing a score; missing hands or discontinuous timestamps clear the window. These are engineering proxies, not physiological measurements, and need empirical validation. Their scales and thresholds are provisional.
 
 ## Formula and thresholds
 Historical formula as recorded: S=0.35Q+0.30G+0.20/(1+V)+0.15/(1+10T). Q/G in [0,1], V/T non-negative. Historical status thresholds are 0.60 and 0.72. The original source could not be cross-checked because the repository was empty at initialization. This score is not a calibrated flight-safety probability.
