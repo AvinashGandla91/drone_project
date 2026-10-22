@@ -48,7 +48,7 @@ def main():
                     try:
                         features = normalize_landmarks(points)
                         label, confidence = predict(payload, features)
-                        stability = stability_window.update(features, label, now)
+                        stability = stability_window.update(features, label, now, position=points[0])
                     except ValueError:
                         label, confidence = UNKNOWN, 0.0
                         stability_window.reset()
