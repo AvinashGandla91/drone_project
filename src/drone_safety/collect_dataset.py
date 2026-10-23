@@ -49,6 +49,10 @@ def main():
                 if not ok:
                     print("Camera frame unavailable; collection stopped.")
                     break
+
+                # Mirror before detection so preview, drawn landmarks, and saved
+                # normalized coordinates all use the same left-right orientation.
+                frame = cv2.flip(frame, 1)
                 result = hands.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                 points = None
                 if result.multi_hand_landmarks:
@@ -56,8 +60,8 @@ def main():
                     mp.solutions.drawing_utils.draw_landmarks(frame, hand, mp.solutions.hands.HAND_CONNECTIONS)
                     points = np.array([[p.x, p.y, p.z] for p in hand.landmark], dtype=float)
                 cv2.putText(frame, f"COLLECTING: {args.label} (not prediction) | saved: {count}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, .62, (0,255,255), 2)
-                cv2.putText(frame, "SPACE=save valid hand | Q=quit", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, .6, (255,255,255), 2)
-                cv2.imshow("Dataset collector", frame)
+                cv2.putText(frame, "MIRRORED PREVIEW | SPACE=save valid hand | Q=quit", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, .6, (255,255,255), 2)
+                cv2.imshow("Dataset collector - mirrored preview", frame)
                 key = cv2.waitKey(1) & 0xff
                 if key == ord("q"):
                     break
