@@ -54,6 +54,10 @@ Historical bands: `S < 0.60` LOW MOVEMENT STABILITY; `0.60 <= S < 0.72` UNCERTAI
 
 Directional commands require two consecutive consistent frames and sufficient confidence (initial threshold 0.75). STOP/HOLD immediately clears pending direction requests. LAND has separate semantics. Simulation output never moves or lands a physical drone.
 
+## Live stability window
+
+The live demo now computes provisional movement proxies over a 15-frame window using normalized landmark vectors: trajectory smoothness, label consistency, velocity fluctuation, and a high-frequency tremor proxy. The historical score is not shown until the window is full and valid. Missing hands or timing gaps reset the window. Motion entropy is displayed in research metrics only and is not added to the historical score. These formulas are engineering proxies and require empirical validation; they are not physiological measurements or a calibrated probability of flight safety.
+
 ## Evaluation and limitations
 
 Unit tests, offline model evaluation, live webcam trials, simulation results, and physical-hardware tests are separate evidence categories. Do not report accuracy, latency, or safety claims until measured and saved with the dataset split, session IDs, configuration, and environment. 2D landmarks alone may not reliably distinguish palm-side from back-of-hand orientation; verify this experimentally and use an appropriate orientation cue or reject ambiguous input.
