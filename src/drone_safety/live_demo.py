@@ -37,6 +37,8 @@ def main():
                     stability_window.reset()
                     print("Camera lost; pending command state cleared.")
                     break
+                # Match collect_dataset.py: infer on the mirrored webcam frame.
+                frame = cv2.flip(frame, 1)
                 now = time.monotonic()
                 result = hands.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                 label, confidence = UNKNOWN, 0.0
