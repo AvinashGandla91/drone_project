@@ -30,3 +30,12 @@ def test_stability_gates_direction():
 def test_land_separate_and_gated():
     assert SafetyGate().process("LAND", .99, .9, "HIGHER STABILITY").accepted_command == "LAND"
     assert SafetyGate().process("LAND", .99, .65, "UNCERTAIN").accepted_command is None
+
+def test_active_direction_stays_accepted_on_continuous_frames():
+    g = SafetyGate()
+    assert g.process("FORWARD", .9, .9, "HIGHER STABILITY").decision == "PENDING_CONFIRMATION"
+    assert g.process("FORWARD", .9, .9, "HIGHER STABILITY").accepted_command == "FORWARD"
+    for _ in range(5):
+        d = g.process("FORWARD", .9, .9, "HIGHER STABILITY")
+        assert d.decision == "ACCEPTED"
+        assert d.accepted_command == "FORWARD"
