@@ -65,6 +65,11 @@ class SafetyGate:
         if score < 0.72:
             self._pending_label, self._pending_count = None, 0
             return Decision(label, conf, score, stability_status, "HELD_UNCERTAIN_STABILITY", None)
+        # Keep a continuously recognized active direction accepted instead of
+        # alternating between ACCEPTED and PENDING_CONFIRMATION on every other frame.
+        if self.active_command == label:
+            self._pending_label, self._pending_count = None, 0
+            return Decision(label, conf, score, stability_status, "ACCEPTED", label)
         self._pending_count = self._pending_count + 1 if self._pending_label == label else 1
         self._pending_label = label
         if self._pending_count < 2:
